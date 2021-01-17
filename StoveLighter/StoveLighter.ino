@@ -4,6 +4,8 @@
 #include <WebServer.h>
 #include <ESPmDNS.h>
 #include <time.h>
+#include <WiFiUdp.h>
+#include <ArduinoOTA.h>
 #include <EEPROM.h>
 
 #ifdef ESP8266
@@ -49,6 +51,7 @@ void setup() {
   Serial.println(" CONNECTED");
   Serial.println(WiFi.localIP());
   initServer();
+  initOta();
 
   struct tm tm_newtime = getLocalTime();
 #ifdef ESP8266
@@ -77,6 +80,7 @@ void loop() {
     Serial.println("OH YES BOY");
   }
   server.handleClient();
+  ArduinoOTA.handle();
 }
 
 void AccendiStufa() {
@@ -96,6 +100,38 @@ tm getLocalTime(){
   }
   Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
   return timeinfo;
+}
+
+void initOta(){
+  ArduinoOTA.setHostname("esp32-stove");
+  ArduinoOTA
+    .onStart([]() {
+      String type;
+      if (ArduinoOTA.getCommand() == U_FLASH)
+        type = "sketch";
+      else // U_SPIFFS
+        type = "filesystem";
+
+      // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
+      Serial.println("Start updating " + type);
+    })
+    .onEnd([]() {
+      Serial.println("\nEnd");
+    })
+    .onProgress([](unsigned int progress, unsigned int total) {
+      Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+    })
+    .onError([](ota_error_t error) {
+      Serial.printf("Error[%u]: ", error);
+      if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
+      else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
+      else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
+      else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
+      else if (error == OTA_END_ERROR) Serial.println("End Failed");
+    });
+
+  ArduinoOTA.begin();
+  Serial.println("OTA started");
 }
 
 void split(String data, char separator, int out[2]){
@@ -119,7 +155,7 @@ void split(String data, char separator, int out[2]){
 void updateCron(){
   for (int i = 0; i<7; i++){
     Cron.free(ids[i]);
-    ids[7] = dtINVALID_ALARM_ID;
+    ids[i] = dtINVALID_ALARM_ID;
   }
 
   hour hours;
