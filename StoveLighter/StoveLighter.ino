@@ -77,7 +77,7 @@ void loop() {
   if((millis() - time_now >= period) && accendi){
     digitalWrite(2, LOW);
     accendi = false;
-    Serial.println("OH YES BOY");
+    Serial.println("Stove ON");
   }
   server.handleClient();
   ArduinoOTA.handle();
@@ -87,7 +87,7 @@ void AccendiStufa() {
   accendi = true;
   time_now = millis();
   digitalWrite(2, HIGH);
-  Serial.println("STOVE ON");
+  Serial.println("CLICKING THE BUTTON");
 }
 
 tm getLocalTime(){
@@ -103,7 +103,7 @@ tm getLocalTime(){
 }
 
 void initOta(){
-  ArduinoOTA.setHostname("esp32-stove");
+  ArduinoOTA.setHostname("esp32-stufa");
   ArduinoOTA
     .onStart([]() {
       String type;
